@@ -50,14 +50,10 @@ class AuthController {
 					user,
 					access_token: accessToken
 				})
-			} else {
-				return response.json({
-					message: 'Credential not match.'
-				})
 			}
-			
+
 		} catch(err) {
-			return response.send(err)
+			return response.status(401).json(err)
 		}
 	}
 }
