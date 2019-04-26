@@ -7,6 +7,8 @@
 /**
  * Resourceful controller for interacting with comments
  */
+const Comment = use('App/Models/Comment') 
+
 class CommentController {
   /**
    * Show a list of all comments.
@@ -40,7 +42,27 @@ class CommentController {
    * @param {Request} ctx.request
    * @param {Response} ctx.response
    */
-  async store ({ request, response }) {
+  async store ({ auth, request, response }) {
+    try {
+    const { post_id, body } = request.post()
+    const user = await auth.getUser()
+
+    const comment = await Comment.create({post_id, body, user_id: user.id})
+
+    const { username, profile_pict } = user;
+
+    return response.json({
+      data: {
+        ...comment.toJSON(),
+        user: {
+          username,
+          profile_pict
+        }
+      }
+    })
+    } catch(err) {
+      return response.json(err)
+    }
   }
 
   /**

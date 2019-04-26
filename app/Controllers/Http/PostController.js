@@ -12,6 +12,7 @@ const User = use('App/Models/User');
 const Post = use('App/Models/Post');
 const Helpers = use('Helpers');
 const PostImage = use('App/Models/PostImage');
+const Comment = use('App/Models/Comment');
 
 class PostController {
   /**
@@ -24,7 +25,9 @@ class PostController {
    * @param {View} ctx.view
    */
   async index({ request, response }) {
-    const posts = await Post.all();
+    const posts = await Post.query()
+      .orderBy('created_at', 'desc')
+      .fetch();
 
     const postsJSON = await posts.toJSON();
 
@@ -32,9 +35,9 @@ class PostController {
       let post_image = await PostImage.query()
         .where('post_id', post.id)
         .first();
-      let user = await User.find(post.user_id)
+      let user = await User.find(post.user_id);
       return {
-        user:{
+        user: {
           username: user.username,
           profile_pict: user.profile_pict
         },
@@ -43,10 +46,10 @@ class PostController {
       };
     });
 
-    let merged = await Promise.all(promises);
+    let data = await Promise.all(promises);
 
     return response.json({
-      data: merged
+      data
     });
   }
 
@@ -81,15 +84,17 @@ class PostController {
       if (!image.moved()) {
         return console.log(image.error());
       }
-      console.log(image.name)
       const post_image = await PostImage.create({
         image: fileNameToStore,
         post_id: post.id
       });
 
       const merged = {
-        username: user.username,
-        ...post,
+        user: {
+          username: user.username,
+          profile_pict: user.profile_pict
+        },
+        ...post.toJSON(),
         image: post_image
       };
 
@@ -98,7 +103,6 @@ class PostController {
         data: merged
       });
     } catch (err) {
-      console.log(err);
       return response.send(err);
     }
   }
@@ -112,7 +116,28 @@ class PostController {
    * @param {Response} ctx.response
    * @param {View} ctx.view
    */
-  async show({ params, request, response, view }) {}
+  async show({ params, request, response, view }) {
+    try {
+      const post = await Post.find(params.id);
+      const user = await User.find(post.user_id);
+      const post_image = await PostImage.query()
+        .where('post_id', post.id)
+        .fetch();
+
+      return response.json({
+        data: {
+          ...post.toJSON(),
+          user: {
+            username: user.username,
+            profile_pict: user.profile_pict
+          },
+          images: post_image
+        }
+      });
+    } catch (err) {
+      return response.json(err);
+    }
+  }
 
   /**
    * Update post details.
@@ -133,6 +158,42 @@ class PostController {
    * @param {Response} ctx.response
    */
   async destroy({ params, request, response }) {}
+
+  async showComments({ params, request, response }) {
+    const post = await Post.find(params.id)
+    const user = await User.find(post.user_id)
+
+    const comments = await Comment.query().where('post_id', post.id).fetch()
+
+    let promises = comments.toJSON().map(async comment => {
+      let user = await User.find(comment.user_id);
+
+      return {
+        ...comment,
+        user: {
+          username: user.username,
+          profile_pict: user.profile_pict
+        },
+      };
+    });
+
+    const comments_with_user = await Promise.all(promises)
+    
+    const data = {
+      ...post.toJSON(),
+      user: {
+        username: user.username,
+        profile_pict: user.profile_pict
+      },
+      comments: comments_with_user
+    }
+
+    return response.json({
+      data
+    })
+
+  }
+
 
   async test({ params, request, response }) {}
 }
