@@ -25,32 +25,19 @@ class PostController {
    * @param {View} ctx.view
    */
   async index({ request, response }) {
-    const posts = await Post.query()
-      .orderBy('created_at', 'desc')
-      .fetch();
+    const getRequest = request.get();
 
-    const postsJSON = await posts.toJSON();
+    const page = getRequest.page || 1;
+    const limit = getRequest.limit || 10;
 
-    let promises = postsJSON.map(async post => {
-      let post_image = await PostImage.query()
-        .where('post_id', post.id)
-        .first();
-      let user = await User.find(post.user_id);
-      return {
-        user: {
-          username: user.username,
-          profile_pict: user.profile_pict
-        },
-        ...post,
-        image: post_image
-      };
-    });
+    const query = Post.query();
 
-    let data = await Promise.all(promises);
+    query.with('images');
+    query.with('user');
 
-    return response.json({
-      data
-    });
+    const posts = await query.paginate(page, limit);
+
+    return response.json(posts);
   }
 
   /**
@@ -77,7 +64,6 @@ class PostController {
 
       await image.move(Helpers.publicPath('uploads/post_images'), {
         name: fileNameToStore,
-        // name: 'awkwkw.jpg',
         overwrite: true
       });
 
@@ -118,22 +104,16 @@ class PostController {
    */
   async show({ params, request, response, view }) {
     try {
-      const post = await Post.find(params.id);
-      const user = await User.find(post.user_id);
-      const post_image = await PostImage.query()
-        .where('post_id', post.id)
-        .fetch();
+      const post_id = params.id;
 
+      const query = Post.query();
+      query.with('images');
+      query.with('user');
+
+      const post = await query.where('id', post_id).first();
       return response.json({
-        data: {
-          ...post.toJSON(),
-          user: {
-            username: user.username,
-            profile_pict: user.profile_pict
-          },
-          images: post_image
-        }
-      });
+        data: post  
+      })      
     } catch (err) {
       return response.json(err);
     }
@@ -160,40 +140,23 @@ class PostController {
   async destroy({ params, request, response }) {}
 
   async showComments({ params, request, response }) {
-    const post = await Post.find(params.id)
-    const user = await User.find(post.user_id)
+    try {
+      const post_id = params.id;   
 
-    const comments = await Comment.query().where('post_id', post.id).fetch()
+      const query = Post.query();
+      
+      query.with('comments.user');
+      query.with('user');
+      
+      const post = await query.where('id', post_id).first();
 
-    let promises = comments.toJSON().map(async comment => {
-      let user = await User.find(comment.user_id);
-
-      return {
-        ...comment,
-        user: {
-          username: user.username,
-          profile_pict: user.profile_pict
-        },
-      };
-    });
-
-    const comments_with_user = await Promise.all(promises)
-    
-    const data = {
-      ...post.toJSON(),
-      user: {
-        username: user.username,
-        profile_pict: user.profile_pict
-      },
-      comments: comments_with_user
+      return response.json({
+        data: post  
+      })      
+    } catch(err) {
+      console.log(err)   
     }
-
-    return response.json({
-      data
-    })
-
   }
-
 
   async test({ params, request, response }) {}
 }

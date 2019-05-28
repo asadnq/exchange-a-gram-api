@@ -23,18 +23,6 @@ class CommentController {
   }
 
   /**
-   * Render a form to be used for creating a new comment.
-   * GET comments/create
-   *
-   * @param {object} ctx
-   * @param {Request} ctx.request
-   * @param {Response} ctx.response
-   * @param {View} ctx.view
-   */
-  async create ({ request, response, view }) {
-  }
-
-  /**
    * Create/save a new comment.
    * POST comments
    *
@@ -61,7 +49,7 @@ class CommentController {
       }
     })
     } catch(err) {
-      return response.json(err)
+      console.log(err)
     }
   }
 
