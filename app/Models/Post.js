@@ -13,6 +13,9 @@ class Post extends Model {
   comments() {
     return this.hasMany("App/Models/Comment", "id", "post_id");  
   }
+  likes() {
+    return this.hasMany('App/Models/Like', 'id', 'post_id')  
+  }
 }
 
 module.exports = Post;

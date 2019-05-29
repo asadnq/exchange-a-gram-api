@@ -34,7 +34,7 @@ class PostController {
 
     query.with('images');
     query.with('user');
-
+    query.withCount('likes')
     const posts = await query.paginate(page, limit);
 
     return response.json(posts);

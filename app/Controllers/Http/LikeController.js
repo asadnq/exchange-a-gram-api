@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 
 /** @typedef {import('@adonisjs/framework/src/Request')} Request */
 /** @typedef {import('@adonisjs/framework/src/Response')} Response */
@@ -7,6 +7,7 @@
 /**
  * Resourceful controller for interacting with likes
  */
+const Like = use('App/Models/Like');
 class LikeController {
   /**
    * Show a list of all likes.
@@ -17,20 +18,7 @@ class LikeController {
    * @param {Response} ctx.response
    * @param {View} ctx.view
    */
-  async index ({ request, response, view }) {
-  }
-
-  /**
-   * Render a form to be used for creating a new like.
-   * GET likes/create
-   *
-   * @param {object} ctx
-   * @param {Request} ctx.request
-   * @param {Response} ctx.response
-   * @param {View} ctx.view
-   */
-  async create ({ request, response, view }) {
-  }
+  async index({ request, response, view }) {}
 
   /**
    * Create/save a new like.
@@ -40,7 +28,30 @@ class LikeController {
    * @param {Request} ctx.request
    * @param {Response} ctx.response
    */
-  async store ({ request, response }) {
+  async store({ auth, request, response }) {
+    try {
+      const user = await auth.getUser();
+      const { post_id } = request.post();
+
+      const find_like = await Like.query()
+        .where('user_id', user.id)
+        .andWhere('post_id', post_id)
+        .first();
+
+      if (find_like) {
+        await find_like.delete();
+
+        return response
+          .status(200)
+          .json({ data: find_like, message: 'disliked success.' });
+      } else {
+        const like = await Like.create({ post_id, user_id: user.id });
+
+        return response.status(201).json({ data: like });
+      }
+    } catch (err) {
+      console.log(err);
+    }
   }
 
   /**
@@ -52,20 +63,7 @@ class LikeController {
    * @param {Response} ctx.response
    * @param {View} ctx.view
    */
-  async show ({ params, request, response, view }) {
-  }
-
-  /**
-   * Render a form to update an existing like.
-   * GET likes/:id/edit
-   *
-   * @param {object} ctx
-   * @param {Request} ctx.request
-   * @param {Response} ctx.response
-   * @param {View} ctx.view
-   */
-  async edit ({ params, request, response, view }) {
-  }
+  async show({ params, request, response, view }) {}
 
   /**
    * Update like details.
@@ -75,8 +73,7 @@ class LikeController {
    * @param {Request} ctx.request
    * @param {Response} ctx.response
    */
-  async update ({ params, request, response }) {
-  }
+  async update({ params, request, response }) {}
 
   /**
    * Delete a like with id.
@@ -86,8 +83,7 @@ class LikeController {
    * @param {Request} ctx.request
    * @param {Response} ctx.response
    */
-  async destroy ({ params, request, response }) {
-  }
+  async destroy({ params, request, response }) {}
 }
 
-module.exports = LikeController
+module.exports = LikeController;
