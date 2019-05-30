@@ -7,12 +7,9 @@
 /**
  * Resourceful controller for interacting with posts
  */
-const Database = use('Database');
-const User = use('App/Models/User');
 const Post = use('App/Models/Post');
 const Helpers = use('Helpers');
 const PostImage = use('App/Models/PostImage');
-const Comment = use('App/Models/Comment');
 
 class PostController {
   /**
@@ -30,11 +27,16 @@ class PostController {
     const page = getRequest.page || 1;
     const limit = getRequest.limit || 10;
 
+    /*const query = Post.query()
+      .select('posts.*')
+      .count('likes.id as likes_count')
+      .innerJoin('likes', 'likes.post_id', 'posts.id')
+      .with('images')*/
     const query = Post.query();
 
     query.with('images');
     query.with('user');
-    query.withCount('likes')
+    query.withCount('likes');
     const posts = await query.paginate(page, limit);
 
     return response.json(posts);
@@ -112,8 +114,8 @@ class PostController {
 
       const post = await query.where('id', post_id).first();
       return response.json({
-        data: post  
-      })      
+        data: post
+      });
     } catch (err) {
       return response.json(err);
     }
@@ -141,20 +143,20 @@ class PostController {
 
   async showComments({ params, request, response }) {
     try {
-      const post_id = params.id;   
+      const post_id = params.id;
 
       const query = Post.query();
-      
+
       query.with('comments.user');
       query.with('user');
-      
+
       const post = await query.where('id', post_id).first();
 
       return response.json({
-        data: post  
-      })      
-    } catch(err) {
-      console.log(err)   
+        data: post
+      });
+    } catch (err) {
+      console.log(err);
     }
   }
 

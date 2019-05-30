@@ -4,6 +4,9 @@
 const Model = use("Model");
 
 class Post extends Model {
+  static get Serializer() {
+    return 'GenericSerializer';  
+  }
   user() {
     return this.belongsTo("App/Models/User", "user_id", "id");
   }
